@@ -32,6 +32,9 @@ Item {
   property bool cursorActive: false
   property bool loading: false
   property string loadError: ""
+  //: true when devboost itself is absent, which turns the empty state into an offer
+  //: to install it rather than a dead end.
+  property bool missingBinary: false
   property var modules: []
   property var profiles: []
   property var expanded: ({})
@@ -125,12 +128,24 @@ Item {
     listProc.running = true
   }
 
-  function fail(message) {
+  function fail(message, missing) {
     root.loading = false
     root.modules = []
     root.profiles = []
     root.rebuild()
     root.loadError = message
+    root.missingBinary = missing === true
+  }
+
+  // dev-boost is a hard dependency: without it this panel has nothing to show and nothing
+  // to do. `omarchy plugin add` cannot install it — plugin install only clones, validates
+  // and enables, and never executes anything from the plugin (a security property, not an
+  // oversight). So the panel offers the install itself, one keypress, in a terminal where
+  // you can see it work and answer for sudo.
+  function installDevboost() {
+    root.runInTerminal(
+      "curl -fsSL https://raw.githubusercontent.com/adams100111/dev-boost/main/scripts/get.sh | bash",
+      "install dev-boost")
   }
 
   function labelFor(profile) {
@@ -142,11 +157,12 @@ Item {
 
   function applyCatalogue(text) {
     root.loading = false
+    root.missingBinary = false
     var parsed = []
     try {
       parsed = JSON.parse(text)
     } catch (e) {
-      root.fail("Could not read the module list from devboost.")
+      root.fail("Could not read the module list from devboost.", false)
       return
     }
 
@@ -389,9 +405,13 @@ Item {
       if (code === 0 && listProc.buffer) {
         root.applyCatalogue(listProc.buffer)
       } else {
-        root.fail(code === 127 || code < 0
-                  ? "devboost is not on PATH — install it, then press ^r."
-                  : "devboost could not list modules (exit " + code + ").")
+        var missing = code === 127 || code < 0
+        root.fail(missing
+                  ? "dev-boost is not installed.\n\nPress enter to install it — "
+                    + "it opens a terminal so you can watch it and answer for sudo.\n"
+                    + "Press ^r to re-check once it is done."
+                  : "devboost could not list modules (exit " + code + ").",
+                  missing)
       }
     }
   }
@@ -407,7 +427,7 @@ Item {
     onTriggered: {
       if (!root.loading) return
       listProc.running = false
-      root.fail("devboost did not respond. Is it installed and on PATH?")
+      root.fail("devboost did not respond. Is it installed and on PATH?", true)
     }
   }
 
@@ -460,7 +480,8 @@ Item {
             else root.close()
             event.accepted = true
           } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            root.installPending()
+            if (root.missingBinary) root.installDevboost()
+            else root.installPending()
             event.accepted = true
           } else if (event.key === Qt.Key_Right) {
             root.toggleExpand(root.selectedIndex)
@@ -567,6 +588,7 @@ Item {
             width: parent.width - Style.space(40)
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap
+            lineHeight: 1.35
             text: root.loadError !== ""
                   ? root.loadError
                   : (root.filterText ? "Nothing matches “" + root.filterText + "”"

@@ -71,8 +71,24 @@ Or open it directly, with no setup at all:
 omarchy-shell shell toggle adams100111.devboost '{}'
 ```
 
-Requires `devboost` on `PATH`. If it is missing, the panel says so rather than sitting on
-a spinner.
+### The dev-boost dependency
+
+This plugin is a front end for [dev-boost](https://github.com/adams100111/dev-boost). It
+has nothing to show and nothing to do without it, so `devboost` must be on `PATH`.
+
+**`omarchy plugin add` cannot install it for you.** Plugin install only clones, validates
+and enables — it never executes anything from the plugin, and the manifest schema has no
+install hook (`omarchy plugin validate` even refuses symlinks). That is a security
+property, not an oversight: a plugin you add from a URL should not be able to run
+arbitrary code on your machine.
+
+So the panel offers it instead. Open it without dev-boost installed and it says so, and
+**enter** runs the official installer in a terminal — where you can watch it and answer
+for sudo — rather than leaving you at a dead end. Press `^r` afterwards to re-check.
+
+The probe runs through a login shell, so a `devboost` in `~/.local/bin` or a uv tool
+directory is found even though the Omarchy shell is started by your session rather than
+from a terminal.
 
 ## Keys
 
