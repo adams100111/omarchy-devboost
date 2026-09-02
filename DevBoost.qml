@@ -488,10 +488,15 @@ Item {
             if (root.missingBinary) root.installDevboost()
             else root.installPending()
             event.accepted = true
-          } else if (event.key === Qt.Key_Right) {
+          } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Left) {
             root.toggleExpand(root.selectedIndex)
             event.accepted = true
-          } else if (event.key === Qt.Key_Left) {
+          } else if (event.key === Qt.Key_Space && !root.filterText) {
+            // Space expands while BROWSING, and types a space once you are searching.
+            // It cannot do both: space is a printable character, and `matches()` splits the
+            // query on whitespace so "python lsp" narrows by both terms. Losing that would
+            // cost more than the shortcut gains — and while filtering, a matching stack is
+            // expanded automatically anyway, so there is nothing left for space to do.
             root.toggleExpand(root.selectedIndex)
             event.accepted = true
           } else if (event.key === Qt.Key_Tab) {
@@ -767,7 +772,7 @@ Item {
           width: parent.width
           height: root.footerHeight
           textFormat: Text.PlainText
-          text: "type to search   → expand   enter install   tab select   ^u update   ^g system update   ^l verify   ^r reload"
+          text: "type to search   space/→ expand   enter install   tab select   ^u update   ^g system update   ^l verify   ^r reload"
           color: root.foreground
           opacity: 0.4
           font.family: root.fontFamily
