@@ -371,7 +371,15 @@ Item {
   Process {
     id: listProc
     property string buffer: ""
-    command: ["devboost", "list", "--json", "--status"]
+    // Run through a LOGIN shell, for two reasons that both bit in testing:
+    //   1. Quickshell's Process does not emit `exited` when the binary itself cannot be
+    //      found — it only logs a warning — so onExited never fires and the panel sits on
+    //      "loading…" forever. bash always exists, so the process always starts and always
+    //      exits, returning 127 when devboost is missing. The error path becomes reachable.
+    //   2. The shell is started by the session, not by your terminal, so it does not
+    //      inherit a PATH built by ~/.bashrc. `-l` sources the profile, which is how a
+    //      devboost installed into ~/.local/bin or a uv tool dir gets found at all.
+    command: ["bash", "-lc", "command -v devboost >/dev/null 2>&1 || exit 127; exec devboost list --json --status"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: listProc.buffer = text
