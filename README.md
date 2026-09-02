@@ -92,17 +92,41 @@ from a terminal.
 
 ## Keys
 
+Search is **modal**, the way Claude Code's own plugin browser does it (`/ to search` while
+browsing, `type to filter · esc to clear` once inside). Type-to-search reads as friendlier,
+but it spends every bare letter on the filter — which is exactly why `i` and `space` could
+not be actions. One keystroke to enter search buys back the whole alphabet.
+
+**Browsing**
+
 | Key | Action |
 |---|---|
-| type | filter stacks and modules |
-| `→` / `←` | expand or collapse a stack |
-| `enter` | install the highlighted stack or module (or everything selected) |
+| `/` | start searching |
+| `enter` `space` `→` `←` | expand or collapse the highlighted stack |
+| `i` | install the highlighted stack or module (or everything selected) |
 | `tab` | add to the selection and move on |
-| `^u` | update dev-boost's own tooling (`devboost install --update`) |
-| `^g` | system update (`omarchy update`) |
-| `^l` | verify |
-| `^r` | reload the catalogue |
-| `esc` | clear the filter, then close |
+| `↑` `↓` / `k` `j` | move |
+| `u` | update dev-boost's own tooling (`devboost install --update`) |
+| `g` | system update (`omarchy update`) |
+| `v` | verify |
+| `r` | reload the catalogue |
+| `esc` | close |
+
+**Searching**
+
+| Key | Action |
+|---|---|
+| any character | filter |
+| `↑` `↓` | move through the matches |
+| `enter` | install the highlighted match — you searched for it on purpose |
+| `esc` | clear and go back to browsing |
+
+Backspacing past the first character also returns you to browsing, so you are never stuck
+in a mode you did not notice entering.
+
+Note that **enter never installs while browsing**. It expands. Installing takes minutes,
+wants sudo, and changes the machine — putting it on the key everyone hits by reflex is how
+you install the .NET stack because you meant to look inside it.
 
 Click a stack to expand it; double-click any row to install it.
 

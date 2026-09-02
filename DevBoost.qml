@@ -28,6 +28,11 @@ Item {
 
   property bool opened: false
   property string filterText: ""
+  //: Search is MODAL, matching Claude Code's plugin browser ("/ to search" in browse
+  //: mode, "type to filter · esc to clear" once inside). Type-to-search reads as
+  //: friendlier but it spends every bare letter on the filter, which is why space and
+  //: i could not be actions. One keystroke to enter search buys back the whole alphabet.
+  property bool searching: false
   property int selectedIndex: 0
   property bool cursorActive: false
   property bool loading: false
@@ -106,6 +111,7 @@ Item {
   function open(payloadJson) {
     root.opened = true
     root.filterText = ""
+    root.searching = false
     root.selectedIndex = 0
     root.cursorActive = true
     root.expanded = ({})
@@ -480,45 +486,76 @@ Item {
 
         Keys.priority: Keys.BeforeItem
         Keys.onPressed: function (event) {
+          // --- search mode: printable keys belong to the filter --------------------
+          if (root.searching) {
+            if (event.key === Qt.Key_Escape) {
+              root.setFilter("")
+              root.searching = false
+              event.accepted = true
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+              // You searched for this on purpose — enter commits it.
+              root.installPending()
+              event.accepted = true
+            } else if (event.key === Qt.Key_Up) {
+              root.moveCursor(-1)
+              event.accepted = true
+            } else if (event.key === Qt.Key_Down) {
+              root.moveCursor(1)
+              event.accepted = true
+            } else if (Util.editsFilter(event, root.filterText)) {
+              var edited = Util.editedFilter(event, root.filterText)
+              root.setFilter(edited)
+              // Backspacing past the first character drops you back to browsing, so you
+              // are never stuck in a mode you did not notice entering.
+              if (!edited) root.searching = false
+              event.accepted = true
+            } else if (event.text && event.text.length === 1
+                       && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127
+                       && (event.modifiers === Qt.NoModifier || event.modifiers === Qt.ShiftModifier)) {
+              root.setFilter(root.filterText + event.text)
+              event.accepted = true
+            }
+            return
+          }
+
+          // --- browse mode: bare letters are actions -------------------------------
           if (event.key === Qt.Key_Escape) {
-            if (root.filterText) root.setFilter("")
-            else root.close()
+            root.close()
             event.accepted = true
-          } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+          } else if (event.key === Qt.Key_Slash) {
+            root.searching = true
+            event.accepted = true
+          } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                     || event.key === Qt.Key_Space
+                     || event.key === Qt.Key_Right || event.key === Qt.Key_Left) {
+            // enter/space/arrows all expand — the benign action, so the key everyone
+            // hits by reflex cannot start a multi-minute sudo install.
+            root.toggleExpand(root.selectedIndex)
+            event.accepted = true
+          } else if (event.key === Qt.Key_I) {
             if (root.missingBinary) root.installDevboost()
             else root.installPending()
-            event.accepted = true
-          } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Left) {
-            root.toggleExpand(root.selectedIndex)
-            event.accepted = true
-          } else if (event.key === Qt.Key_Space && !root.filterText) {
-            // Space expands while BROWSING, and types a space once you are searching.
-            // It cannot do both: space is a printable character, and `matches()` splits the
-            // query on whitespace so "python lsp" narrows by both terms. Losing that would
-            // cost more than the shortcut gains — and while filtering, a matching stack is
-            // expanded automatically anyway, so there is nothing left for space to do.
-            root.toggleExpand(root.selectedIndex)
             event.accepted = true
           } else if (event.key === Qt.Key_Tab) {
             root.togglePick(root.selectedIndex)
             root.moveCursor(1)
             event.accepted = true
-          } else if (event.key === Qt.Key_U && (event.modifiers & Qt.ControlModifier)) {
+          } else if (event.key === Qt.Key_U) {
             root.updateTools()
             event.accepted = true
-          } else if (event.key === Qt.Key_G && (event.modifiers & Qt.ControlModifier)) {
+          } else if (event.key === Qt.Key_G) {
             root.upgradeSystem()
             event.accepted = true
-          } else if (event.key === Qt.Key_L && (event.modifiers & Qt.ControlModifier)) {
+          } else if (event.key === Qt.Key_V) {
             root.verifyAll()
             event.accepted = true
-          } else if (event.key === Qt.Key_R && (event.modifiers & Qt.ControlModifier)) {
+          } else if (event.key === Qt.Key_R) {
             root.reload()
             event.accepted = true
-          } else if (event.key === Qt.Key_Up) {
+          } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
             root.moveCursor(-1)
             event.accepted = true
-          } else if (event.key === Qt.Key_Down) {
+          } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
             root.moveCursor(1)
             event.accepted = true
           } else if (event.key === Qt.Key_PageUp) {
@@ -526,16 +563,6 @@ Item {
             event.accepted = true
           } else if (event.key === Qt.Key_PageDown) {
             root.moveCursor(8)
-            event.accepted = true
-          } else if (Util.editsFilter(event, root.filterText)) {
-            // Deletion keys only (Backspace / Ctrl+Backspace / Ctrl+U) — Util deliberately
-            // does not handle typing, so the printable branch below is not optional.
-            root.setFilter(Util.editedFilter(event, root.filterText))
-            event.accepted = true
-          } else if (event.text && event.text.length === 1
-                     && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127
-                     && (event.modifiers === Qt.NoModifier || event.modifiers === Qt.ShiftModifier)) {
-            root.setFilter(root.filterText + event.text)
             event.accepted = true
           }
         }
@@ -612,7 +639,9 @@ Item {
             width: parent.width
             height: root.searchHeight
             textFormat: Text.PlainText
-            text: root.filterText || "Search stacks and modules…"
+            text: root.searching
+                  ? (root.filterText || "Type to filter…")
+                  : "Press / to search"
             color: root.foreground
             opacity: root.filterText ? 1 : 0.5
             font.family: root.fontFamily
@@ -772,7 +801,9 @@ Item {
           width: parent.width
           height: root.footerHeight
           textFormat: Text.PlainText
-          text: "type to search   space/→ expand   enter install   tab select   ^u update   ^g system update   ^l verify   ^r reload"
+          text: root.searching
+                ? "type to filter   ↑↓ move   enter install   esc back"
+                : "/ search   enter/space expand   i install   tab select   u update   g system update   v verify   r reload   esc close"
           color: root.foreground
           opacity: 0.4
           font.family: root.fontFamily
