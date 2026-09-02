@@ -54,7 +54,8 @@ Item {
   readonly property int cornerRadius: Style.cornerRadius
   property string fontFamily: Style.font.menuFamily
   property int contentMargin: Style.spacing.panelPadding
-  property int headerHeight: Math.max(Style.space(34), Style.font.title + Style.spacing.controlPaddingY * 2)
+  property int titleHeight: Math.max(Style.space(30), Style.font.title + Style.space(6))
+  property int searchHeight: Math.max(Style.space(26), Style.font.heading + Style.space(6))
   property int footerHeight: Math.max(Style.space(22), Style.font.caption + Style.space(8))
   property int contentSpacing: Style.spacing.md
   property int cardWidth: Math.min(Style.space(900), panel.width - Style.gapsOut * 2)
@@ -539,47 +540,68 @@ Item {
         anchors.leftMargin: card.contentLeftInset
         spacing: root.contentSpacing
 
-        // --- search line -----------------------------------------------------------
-        Rectangle {
+        // --- title + search --------------------------------------------------------
+        // The panel says what it IS before it says what you can type into it. Without the
+        // title the first thing you read is a placeholder, which makes an app you opened
+        // deliberately look like a search box that appeared at you.
+        Column {
+          id: headerBlock
           width: parent.width
-          height: root.headerHeight
-          color: "transparent"
+          spacing: Style.space(3)
 
-          Text {
-            textFormat: Text.PlainText
-            anchors.left: parent.left
-            anchors.right: countLabel.left
-            anchors.rightMargin: Style.space(10)
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.filterText || "Search stacks and modules…"
-            color: root.foreground
-            opacity: root.filterText ? 1 : 0.58
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.heading
-            elide: Text.ElideRight
+          Item {
+            width: parent.width
+            height: root.titleHeight
+
+            Text {
+              textFormat: Text.PlainText
+              anchors.left: parent.left
+              anchors.right: countLabel.left
+              anchors.rightMargin: Style.space(10)
+              anchors.verticalCenter: parent.verticalCenter
+              text: "Dev Boost"
+              color: root.foreground
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.title
+              font.bold: true
+              elide: Text.ElideRight
+            }
+
+            Text {
+              id: countLabel
+              textFormat: Text.PlainText
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              text: root.loading
+                    ? "loading…"
+                    : (root.pickedCount > 0
+                       ? root.pickedCount + " selected"
+                       : root.profiles.length + " stacks · " + root.modules.length + " modules")
+              color: root.foreground
+              opacity: 0.55
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+            }
           }
 
           Text {
-            id: countLabel
+            width: parent.width
+            height: root.searchHeight
             textFormat: Text.PlainText
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.loading
-                  ? "loading…"
-                  : (root.pickedCount > 0
-                     ? root.pickedCount + " selected"
-                     : root.profiles.length + " stacks · " + root.modules.length + " modules")
+            text: root.filterText || "Search stacks and modules…"
             color: root.foreground
-            opacity: 0.55
+            opacity: root.filterText ? 1 : 0.5
             font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.heading
+            elide: Text.ElideRight
+            verticalAlignment: Text.AlignVCenter
           }
         }
 
         // --- list ------------------------------------------------------------------
         Item {
           width: parent.width
-          height: parent.height - root.headerHeight - root.footerHeight - root.contentSpacing * 2
+          height: parent.height - headerBlock.height - root.footerHeight - root.contentSpacing * 2
 
           Text {
             anchors.centerIn: parent
