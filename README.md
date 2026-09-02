@@ -1,4 +1,4 @@
-# Dev-Boost for Omarchy
+# Dev Boost for Omarchy
 
 An [Omarchy](https://omarchy.org/) shell plugin: browse, search and install
 [dev-boost](https://github.com/adams100111/dev-boost) stacks and modules without leaving
@@ -35,16 +35,40 @@ is already on the box before you commit to anything.
 omarchy plugin add https://github.com/adams100111/omarchy-devboost.git --enable
 ```
 
-Then bind it to a key in `~/.config/hypr/bindings.lua`, or add a menu row in
-`~/.config/omarchy/extensions/omarchy-menu.jsonc`:
+### Give it a way to open
+
+**A plugin cannot register a keybinding** — the manifest schema has no such concept, so
+installing this does not put a key on your keyboard. Wire up whichever of these you want.
+
+A keybinding, in `~/.config/hypr/bindings.lua`. Every modifier needs its own `+`:
+
+```lua
+o.bind("SUPER + CTRL + U", "Dev Boost", "omarchy-shell shell toggle adams100111.devboost '{}'")
+```
+
+Check the key is free first with `omarchy menu keybindings --print`, and `hl.unbind(...)`
+before rebinding if it is not. Validate with `hyprctl reload && hyprctl configerrors`.
+The description (`"Dev Boost"`) is what Omarchy lists under **SUPER + K**, so the binding
+shows up alongside the built-in ones.
+
+A row in the Omarchy menu (SUPER + SPACE), in
+`~/.config/omarchy/extensions/omarchy-menu.jsonc` — this one is searchable, so you can
+just type "dev":
 
 ```jsonc
 "devboost": {
   "icon": "",
-  "label": "Dev-Boost",
-  "aliases": ["dev", "install", "modules"],
-  "action": "omarchy-shell shell summon adams100111.devboost '{}'"
+  "label": "Dev Boost",
+  "aliases": ["dev", "devboost", "modules", "stacks", "install"],
+  "description": "Browse, search and install dev-boost stacks and modules",
+  "action": "omarchy-shell shell toggle adams100111.devboost '{}'"
 }
+```
+
+Or open it directly, with no setup at all:
+
+```bash
+omarchy-shell shell toggle adams100111.devboost '{}'
 ```
 
 Requires `devboost` on `PATH`. If it is missing, the panel says so rather than sitting on
