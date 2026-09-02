@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "adams100111.devboost",
+  "name": "Dev-Boost",
+  "version": "1.0.0",
+  "author": "Abdelrhman Eltahir",
+  "license": "MIT",
+  "description": "Browse, search and install the dev stacks, editors and tools that dev-boost manages, without leaving the desktop.",
+  "kinds": [
+    "overlay"
+  ],
+  "entryPoints": {
+    "overlay": "DevBoost.qml"
+  }
+}
