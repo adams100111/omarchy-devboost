@@ -51,6 +51,10 @@ Item {
   property color selectedBackground: Color.menu.selectedBackground
   property color selectedText: Color.menu.selectedText
 
+  //: The same glyph the menu row uses (nf-md-package-variant-closed), so opening the
+  //: panel confirms you got what you clicked. Material Design, matching Omarchy's own
+  //: menu icons rather than the Font Awesome set.
+  readonly property string appIcon: "󰏗"
   readonly property int cornerRadius: Style.cornerRadius
   property string fontFamily: Style.font.menuFamily
   property int contentMargin: Style.spacing.panelPadding
@@ -553,18 +557,33 @@ Item {
             width: parent.width
             height: root.titleHeight
 
-            Text {
-              textFormat: Text.PlainText
+            Row {
               anchors.left: parent.left
               anchors.right: countLabel.left
               anchors.rightMargin: Style.space(10)
               anchors.verticalCenter: parent.verticalCenter
-              text: "Dev Boost"
-              color: root.foreground
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.title
-              font.bold: true
-              elide: Text.ElideRight
+              spacing: Style.space(9)
+
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                textFormat: Text.PlainText
+                text: root.appIcon
+                color: root.foreground
+                opacity: 0.85
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.title
+              }
+
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                textFormat: Text.PlainText
+                text: "Dev Boost"
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.title
+                font.bold: true
+                elide: Text.ElideRight
+              }
             }
 
             Text {
