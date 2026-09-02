@@ -57,7 +57,7 @@ just type "dev":
 
 ```jsonc
 "devboost": {
-  "icon": "",
+  "icon": "󰏗",
   "label": "Dev Boost",
   "aliases": ["dev", "devboost", "modules", "stacks", "install"],
   "description": "Browse, search and install dev-boost stacks and modules",
